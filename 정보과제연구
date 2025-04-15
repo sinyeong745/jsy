@@ -1,0 +1,135 @@
+class Ingredient:
+    def __init__(self, name, function, ewg_score, is_sensitive=False, substitute=None):
+        self.name = name
+        self.function = function
+        self.ewg_score = ewg_score
+        self.is_sensitive = is_sensitive
+        self.substitute = substitute
+
+    def is_safe(self):
+        return self.ewg_score <= 3
+
+    def get_info(self):
+        status = "민감성 주의" if self.is_sensitive else "안전"
+        return f"{self.name} | {self.function} | EWG: {self.ewg_score} | {status}"
+
+
+class CosmeticProduct:
+    def __init__(self, name, skin_type):
+        self.name = name
+        self.skin_type = skin_type
+        self.ingredients = []
+
+    def add_ingredient(self, ingredient):
+        self.ingredients.append(ingredient)
+
+    def analyze(self):
+        print(f"\n'{self.name}' 제품 성분 분석 결과 (피부 타입: {self.skin_type}):")
+        total_score = 0
+        has_issue = False
+
+        for ing in self.ingredients:
+            status = "민감성 주의" if ing.is_sensitive else "안전"
+            print(f"- {ing.get_info()}")
+            total_score += ing.ewg_score
+            if ing.is_sensitive:
+                has_issue = True
+                if ing.substitute:
+                    print(f"    → 대체 성분 추천: {ing.substitute}")
+
+        print("\n---- 종합 위험 점수 계산 ----")
+        risk_level = self.get_risk_level(total_score)
+        print(f"→ 종합 위험 점수: {total_score}점 → 위험 등급: {risk_level}")
+
+        self.analyze_by_skin_type()
+
+        if not has_issue:
+            print("\n→ 이 제품은 민감성 피부에 적합합니다!")
+        else:
+            print("\n→ 주의 성분이 포함되어 있으므로 사용에 유의하세요.")
+
+    def get_risk_level(self, score):
+        if score <= 5:
+            return "★☆☆☆☆ (매우 안전)"
+        elif score <= 10:
+            return "★★☆☆☆ (보통)"
+        elif score <= 15:
+            return "★★★☆☆ (주의)"
+        else:
+            return "★★★★☆ (위험)"
+
+    def analyze_by_skin_type(self):
+        print(f"\n[피부 타입 분석: {self.skin_type}]")
+        for ing in self.ingredients:
+            if self.skin_type == "민감성" and ing.is_sensitive:
+                print(f"  → {ing.name} 성분은 민감성 피부에 자극을 줄 수 있습니다.")
+            elif self.skin_type == "지성" and "각질" in ing.function:
+                print(f"  → {ing.name} 성분은 지성 피부에 유용할 수 있습니다.")
+            elif self.skin_type == "건성" and "보습" in ing.function:
+                print(f"  → {ing.name} 성분은 건성 피부에 효과적일 수 있습니다.")
+
+
+ingredient_list = [
+    Ingredient("글리세린", "보습", 1),
+    Ingredient("향료", "향", 8, True, "무향 또는 천연 에센셜 오일"),
+    Ingredient("살리실산", "각질 제거", 4, True, "PHA"),
+    Ingredient("판테놀", "진정", 1),
+    Ingredient("나이아신아마이드", "미백", 2),
+    Ingredient("알코올", "보존제", 7, True, "무알콜 대체 포뮬러"),
+    Ingredient("히알루론산", "수분 공급", 1),
+]
+
+def show_ingredients():
+    print("\n사용 가능한 성분 목록:")
+    for idx, ing in enumerate(ingredient_list):
+        print(f"{idx+1}. {ing.get_info()}")
+
+def user_select_ingredients():
+    product_name = input("\n당신이 만들 화장품 이름을 입력하세요: ")
+    skin_type = input("피부 타입을 입력하세요 (지성/건성/민감성): ").strip()
+    product = CosmeticProduct(product_name, skin_type)
+
+    while True:
+        show_ingredients()
+        choice = input("사용할 성분 번호를 입력하세요 (끝내려면 0): ")
+        if choice == "0":
+            break
+        try:
+            index = int(choice) - 1
+            if 0 <= index < len(ingredient_list):
+                product.add_ingredient(ingredient_list[index])
+                print(f"→ '{ingredient_list[index].name}' 성분 추가 완료!")
+            else:
+                print("잘못된 번호입니다.")
+        except ValueError:
+            print("숫자를 입력해주세요.")
+    
+    return product
+
+def ingredient_search():
+    search_term = input("\n검색할 성분 이름을 입력하세요: ").strip()
+    for ing in ingredient_list:
+        if search_term.lower() in ing.name.lower():
+            print(f"\n[검색 결과] {ing.get_info()}")
+            if ing.substitute:
+                print(f"→ 대체 성분 추천: {ing.substitute}")
+            return
+    print("검색 결과가 없습니다.")
+
+if __name__ == "__main__":
+    print("=== 민감성 피부용 화장품 성분 분석기 ===")
+    while True:
+        print("\n1. 새로운 화장품 만들기")
+        print("2. 성분 검색")
+        print("3. 종료")
+        choice = input("원하는 작업을 선택하세요: ")
+
+        if choice == "1":
+            product = user_select_ingredients()
+            product.analyze()
+        elif choice == "2":
+            ingredient_search()
+        elif choice == "3":
+            break
+        else:
+            print("잘못된 선택입니다.")
